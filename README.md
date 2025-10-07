@@ -79,9 +79,7 @@ A powerful, modular Discord bot framework built with TypeScript and Discord.js v
 // src/main.ts
 import { ExtendedClient } from "./core";
 
-const client = new ExtendedClient({
-  intents: ["Guilds", "GuildMessages", "MessageContent"]
-});
+const client = new ExtendedClient();
 
 client.start(process.env.TOKEN!);
 ```
@@ -124,19 +122,28 @@ src/
 │   ├── client.ts           # Extended Discord client
 │   ├── command.ts          # Command base class
 │   ├── event.ts            # Event base class
-│   └── interactions/       # Interaction base classes
+│   └── index.ts            # Core exports
 ├── components/             # Reusable components
 │   ├── embeds.ts          # Embed components
 │   ├── buttons.ts         # Button components
 │   ├── menus.ts           # Menu components
 │   ├── modals.ts          # Modal components
 │   ├── public-messages.ts # Public message components
-│   └── callbacks.ts       # Callback system
+│   ├── callbacks.ts       # Callback system
+│   └── interactions/      # Interaction base classes
+│       ├── base/          # Base interaction classes
+│       │   ├── button.ts
+│       │   ├── menu.ts
+│       │   └── modal.ts
+│       ├── callback-button.ts
+│       ├── callback-menu.ts
+│       └── callback-modal.ts
 ├── bot/
 │   ├── commands/          # Slash commands
 │   ├── events/            # Bot events
-│   └── interactions/      # Interaction handlers
+│   └── interactions/      # Custom interaction handlers
 └── utils/                 # Utility functions
+    └── logger.ts          # Logging utility
 ```
 
 ### Core Classes
@@ -181,7 +188,7 @@ const publicEmbed = EmbedComponents.createPublicCustomEmbed({
 import { ButtonComponents } from "./components/buttons";
 import { ButtonStyle } from "discord.js";
 
-// Custom button row
+// Custom button row with callback system
 const buttons = ButtonComponents.createCustomButtonRow([
   {
     callbackId: "action-confirm",
@@ -202,11 +209,18 @@ const buttons = ButtonComponents.createCustomButtonRow([
   }
 ]);
 
-// Single button
+// Single button with callback
 const singleButton = ButtonComponents.createSingleButton({
   callbackId: "single-action",
   label: "Click Me",
   style: ButtonStyle.Primary
+});
+
+// Button with custom ID (for direct handling)
+const customButton = ButtonComponents.createSingleButton({
+  customId: "my-custom-button",
+  label: "Custom Button",
+  style: ButtonStyle.Secondary
 });
 ```
 
@@ -215,6 +229,7 @@ const singleButton = ButtonComponents.createSingleButton({
 ```typescript
 import { MenuComponents } from "./components/menus";
 
+// Menu with callback system
 const menu = MenuComponents.createCustomMenu({
   customId: "selection-menu",
   callbackId: "selection-menu",
@@ -227,6 +242,18 @@ const menu = MenuComponents.createCustomMenu({
     { label: "Option C", value: "c", description: "Third option", emoji: "🔴" }
   ]
 });
+
+// Menu with direct custom ID
+const directMenu = MenuComponents.createCustomMenu({
+  customId: "my-direct-menu",
+  placeholder: "Select something",
+  minValues: 1,
+  maxValues: 1,
+  options: [
+    { label: "Choice 1", value: "choice1", description: "First choice" },
+    { label: "Choice 2", value: "choice2", description: "Second choice" }
+  ]
+});
 ```
 
 ### Modal Components
@@ -235,6 +262,7 @@ const menu = MenuComponents.createCustomMenu({
 import { ModalComponents } from "./components/modals";
 import { TextInputStyle } from "discord.js";
 
+// Modal with callback system
 const modal = ModalComponents.createCustomModal({
   customId: "feedback-modal",
   callbackId: "feedback-modal", 
@@ -245,14 +273,30 @@ const modal = ModalComponents.createCustomModal({
       label: "Feedback Title",
       style: TextInputStyle.Short,
       required: true,
-      maxLength: 100
+      maxLength: 100,
+      placeholder: "Enter a title for your feedback"
     },
     {
       customId: "feedback-description",
       label: "Feedback Description", 
       style: TextInputStyle.Paragraph,
       required: true,
-      maxLength: 1000
+      maxLength: 1000,
+      placeholder: "Describe your feedback in detail"
+    }
+  ]
+});
+
+// Modal with direct custom ID
+const directModal = ModalComponents.createCustomModal({
+  customId: "my-direct-modal",
+  title: "Direct Modal",
+  inputs: [
+    {
+      customId: "user-input",
+      label: "Your Input",
+      style: TextInputStyle.Short,
+      required: true
     }
   ]
 });
@@ -287,12 +331,20 @@ const publicMessage = PublicMessageComponents.createPublicMessage({
 
 ## ⚡ Callback System
 
-The callback system allows you to handle interactions without creating separate files for each interaction.
+The callback system allows you to handle interactions without creating separate files for each interaction. The framework automatically handles callback routing through the `CallbackManager`.
+
+### How It Works
+
+1. **Component Creation**: When you create components with `callbackId`, they automatically get prefixed with `callback-button:`, `callback-menu:`, or `callback-modal:`
+2. **Automatic Routing**: The framework detects these prefixes and routes to the appropriate callback handler
+3. **Callback Registration**: Use `CallbackManager` to register your callback functions
+4. **Execution**: The framework automatically executes your registered callbacks
 
 ### Registering Callbacks
 
 ```typescript
 import { CallbackManager } from "./components/callbacks";
+import { EmbedComponents } from "./components/embeds";
 
 // Button callback
 CallbackManager.registerButtonCallback("my-button", async (client, interaction) => {
@@ -332,12 +384,25 @@ CallbackManager.registerModalCallback("my-modal", async (client, interaction) =>
 });
 ```
 
+### Callback Management
+
+```typescript
+// Clear all callbacks
+CallbackManager.clearCallbacks();
+
+// Get registered callbacks
+const callbacks = CallbackManager.getRegisteredCallbacks();
+console.log("Button callbacks:", callbacks.buttons);
+console.log("Menu callbacks:", callbacks.menus);
+console.log("Modal callbacks:", callbacks.modals);
+```
+
 ## 📝 Commands
 
 ### Creating Commands
 
 ```typescript
-import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction, ButtonStyle } from "discord.js";
 import { Command, ExtendedClient } from "../../core";
 import { EmbedComponents } from "../../components/embeds";
 import { ButtonComponents } from "../../components/buttons";
@@ -389,6 +454,51 @@ class MyCommand extends Command {
 export default new MyCommand();
 ```
 
+### Command with Options
+
+```typescript
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
+import { Command, ExtendedClient } from "../../core";
+import { EmbedComponents } from "../../components/embeds";
+
+class GreetCommand extends Command {
+  data = new SlashCommandBuilder()
+    .setName("greet")
+    .setDescription("Greet a user")
+    .addUserOption(option =>
+      option.setName("user")
+        .setDescription("The user to greet")
+        .setRequired(true)
+    )
+    .addStringOption(option =>
+      option.setName("message")
+        .setDescription("Custom greeting message")
+        .setRequired(false)
+    );
+
+  async execute(client: ExtendedClient, interaction: ChatInputCommandInteraction) {
+    const user = interaction.options.getUser("user")!;
+    const customMessage = interaction.options.getString("message") || "Hello!";
+    
+    const embed = EmbedComponents.createCustomEmbed({
+      title: "👋 Greeting",
+      description: `${customMessage} ${user.username}!`,
+      color: 0x00ff00,
+      thumbnail: user.displayAvatarURL(),
+      fields: [
+        { name: "Greeted by", value: interaction.user.username, inline: true },
+        { name: "Greeted user", value: user.username, inline: true }
+      ],
+      timestamp: true
+    });
+
+    await interaction.reply({ embeds: [embed] });
+  }
+}
+
+export default new GreetCommand();
+```
+
 ### Command Registration
 
 Commands are automatically loaded from `src/bot/commands/`. The bot supports:
@@ -396,6 +506,148 @@ Commands are automatically loaded from `src/bot/commands/`. The bot supports:
 - **Guild Commands** (instant updates) - Set `GUILD_ID` in `.env`
 - **Global Commands** (slow propagation) - Remove `GUILD_ID` from `.env`
 - **Automatic Purging** - Set `PURGE_ON_START=true` to clear old commands
+
+## 🎯 Events
+
+### Creating Events
+
+```typescript
+import { Event, ExtendedClient } from "../../core";
+import { logger } from "../../utils/logger";
+
+class GuildCreateEvent extends Event<"guildCreate"> {
+  name = "guildCreate" as const;
+
+  async execute(client: ExtendedClient, guild) {
+    logger.info(`[+] Bot joined guild: ${guild.name} (${guild.id})`);
+    
+    // Send welcome message to system channel
+    if (guild.systemChannel) {
+      const embed = EmbedComponents.createCustomEmbed({
+        title: "🤖 Bot Online!",
+        description: "Thanks for adding me to your server! Use `/help` to see available commands.",
+        color: 0x00ff00,
+        timestamp: true
+      });
+      
+      await guild.systemChannel.send({ embeds: [embed] });
+    }
+  }
+}
+
+export default new GuildCreateEvent();
+```
+
+### One-time Events
+
+```typescript
+import { Event, ExtendedClient } from "../../core";
+
+class ClientReadyEvent extends Event<"clientReady"> {
+  name = "clientReady" as const;
+  once = true; // This event only runs once
+
+  async execute(client: ExtendedClient) {
+    console.log(`[+] Bot is ready! Logged in as ${client.user?.tag}`);
+  }
+}
+
+export default new ClientReadyEvent();
+```
+
+## 🔧 Custom Interactions
+
+### Creating Custom Buttons
+
+```typescript
+// src/bot/interactions/buttons/my-button.ts
+import { ButtonInteraction } from "discord.js";
+import { Button, ExtendedClient } from "../../../core";
+import { EmbedComponents } from "../../../components/embeds";
+
+class MyCustomButton extends Button {
+  customId = "my-custom-button";
+
+  async execute(client: ExtendedClient, interaction: ButtonInteraction) {
+    const embed = EmbedComponents.createCustomEmbed({
+      title: "Custom Button Clicked!",
+      description: `${interaction.user.username} clicked the custom button!`,
+      color: 0x9932cc,
+      timestamp: true
+    });
+
+    await interaction.reply({ embeds: [embed] });
+  }
+}
+
+export default new MyCustomButton();
+```
+
+### Creating Custom Menus
+
+```typescript
+// src/bot/interactions/menus/my-menu.ts
+import { StringSelectMenuInteraction } from "discord.js";
+import { SelectMenu, ExtendedClient } from "../../../core";
+import { EmbedComponents } from "../../../components/embeds";
+
+class MyCustomMenu extends SelectMenu {
+  customId = "my-custom-menu";
+
+  async execute(client: ExtendedClient, interaction: StringSelectMenuInteraction) {
+    const selectedValues = interaction.values;
+    
+    const embed = EmbedComponents.createCustomEmbed({
+      title: "Menu Selection",
+      description: `You selected: **${selectedValues.join(", ")}**`,
+      color: 0x0099ff,
+      fields: [
+        { name: "Selected by", value: interaction.user.username, inline: true },
+        { name: "Total selections", value: selectedValues.length.toString(), inline: true }
+      ],
+      timestamp: true
+    });
+
+    await interaction.reply({ embeds: [embed] });
+  }
+}
+
+export default new MyCustomMenu();
+```
+
+### Creating Custom Modals
+
+```typescript
+// src/bot/interactions/modals/my-modal.ts
+import { ModalSubmitInteraction } from "discord.js";
+import { Modal, ExtendedClient } from "../../../core";
+import { EmbedComponents } from "../../../components/embeds";
+
+class MyCustomModal extends Modal {
+  customId = "my-custom-modal";
+
+  async execute(client: ExtendedClient, interaction: ModalSubmitInteraction) {
+    const input1 = interaction.fields.getTextInputValue("input1");
+    const input2 = interaction.fields.getTextInputValue("input2");
+    
+    const embed = EmbedComponents.createCustomEmbed({
+      title: "Modal Submitted!",
+      description: "Your form has been submitted successfully.",
+      color: 0x00ff00,
+      fields: [
+        { name: "Input 1", value: input1, inline: true },
+        { name: "Input 2", value: input2, inline: true },
+        { name: "Submitted by", value: interaction.user.username, inline: true }
+      ],
+      timestamp: true
+    });
+
+    await interaction.reply({ embeds: [embed] });
+  }
+}
+
+export default new MyCustomModal();
+```
 
 ## ⚙️ Configuration
 
@@ -413,15 +665,26 @@ PURGE_ON_START=true
 
 ### Bot Intents
 
+The `ExtendedClient` automatically includes all available intents and partials for maximum compatibility. If you need to customize this, you can modify the client constructor in `src/core/client.ts`.
+
 ```typescript
-const client = new ExtendedClient({
-  intents: [
-    "Guilds",
-    "GuildMessages", 
-    "MessageContent",
-    "GuildMembers"
-  ]
-});
+// In src/core/client.ts
+constructor() {
+  super({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+      // Add only the intents you need
+    ],
+    partials: [
+      Partials.Channel,
+      Partials.Message,
+      Partials.User,
+      // Add only the partials you need
+    ],
+  });
+}
 ```
 
 ## 🎯 Examples
@@ -569,26 +832,40 @@ export default new WelcomeCommand();
 
 ## 📚 API Reference
 
-### EmbedComponents
+### Core Classes
 
+#### ExtendedClient
+- `loadCommands()` - Load all commands from `src/bot/commands/`
+- `loadEvents()` - Load all events from `src/bot/events/`
+- `loadInteractions()` - Load all interactions from `src/components/interactions/`
+- `start(token: string)` - Start the bot with the provided token
+
+#### Command
+- `data: SlashCommandBuilder` - Command data definition
+- `execute(client: ExtendedClient, interaction: ChatInputCommandInteraction)` - Command execution
+
+#### Event
+- `name: K` - Event name
+- `once?: boolean` - Whether the event should only run once
+- `execute(client: ExtendedClient, ...args: ClientEvents[K])` - Event execution
+
+### Component Classes
+
+#### EmbedComponents
 - `createCustomEmbed(config: EmbedConfig)` - Create custom embed
 - `createPublicCustomEmbed(config: EmbedConfig)` - Create public embed
 
-### ButtonComponents
-
+#### ButtonComponents
 - `createCustomButtonRow(buttons: ButtonConfig[])` - Create button row
 - `createSingleButton(config: ButtonConfig)` - Create single button
 
-### MenuComponents
-
+#### MenuComponents
 - `createCustomMenu(config: MenuConfig)` - Create select menu
 
-### ModalComponents
-
+#### ModalComponents
 - `createCustomModal(config: ModalConfig)` - Create modal
 
-### PublicMessageComponents
-
+#### PublicMessageComponents
 - `createPublicMessage(config: PublicMessageConfig)` - Create public message
 
 ### CallbackManager
@@ -596,6 +873,22 @@ export default new WelcomeCommand();
 - `registerButtonCallback(id: string, callback: ButtonCallback)` - Register button callback
 - `registerMenuCallback(id: string, callback: MenuCallback)` - Register menu callback
 - `registerModalCallback(id: string, callback: ModalCallback)` - Register modal callback
+- `clearCallbacks()` - Clear all registered callbacks
+- `getRegisteredCallbacks()` - Get all registered callbacks
+
+### Interaction Base Classes
+
+#### Button
+- `customId: string` - Button custom ID
+- `execute(client: ExtendedClient, interaction: ButtonInteraction)` - Button execution
+
+#### SelectMenu
+- `customId: string` - Menu custom ID
+- `execute(client: ExtendedClient, interaction: AnySelectMenuInteraction)` - Menu execution
+
+#### Modal
+- `customId: string` - Modal custom ID
+- `execute(client: ExtendedClient, interaction: ModalSubmitInteraction)` - Modal execution
 
 ## 🤝 Contributing
 
