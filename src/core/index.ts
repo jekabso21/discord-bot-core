@@ -2,6 +2,6 @@ export * from "./client";
 export * from "./command";
 export * from "./event";
 
-export * from "./interactions/button";
-export * from "./interactions/modal";
-export * from "./interactions/menu";
+export * from "../components/interactions/base/button";
+export * from "../components/interactions/base/modal";
+export * from "../components/interactions/base/menu";

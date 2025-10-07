@@ -1,6 +1,5 @@
 import type { ButtonInteraction } from "discord.js";
-
-import type { ExtendedClient } from "../client";
+import type { ExtendedClient } from "../../../core/client";
 
 export abstract class Button {
   abstract customId: string;

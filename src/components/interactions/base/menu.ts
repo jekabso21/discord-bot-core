@@ -5,8 +5,7 @@ import type {
   ChannelSelectMenuInteraction,
   MentionableSelectMenuInteraction,
 } from "discord.js";
-
-import type { ExtendedClient } from "../client";
+import type { ExtendedClient } from "../../../core/client";
 
 export type AnySelectMenuInteraction =
   | StringSelectMenuInteraction

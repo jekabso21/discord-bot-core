@@ -1,6 +1,5 @@
 import type { ModalSubmitInteraction } from "discord.js";
-
-import type { ExtendedClient } from "../client";
+import type { ExtendedClient } from "../../../core/client";
 
 export abstract class Modal {
   abstract customId: string;
