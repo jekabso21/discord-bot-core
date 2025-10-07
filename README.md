@@ -15,17 +15,22 @@ A powerful, modular Discord bot framework built with TypeScript and Discord.js v
 
 ## 📋 Table of Contents
 
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Architecture](#architecture)
-- [Components](#components)
-- [Callback System](#callback-system)
-- [Commands](#commands)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [API Reference](#api-reference)
-- [Contributing](#contributing)
-- [License](#license)
+- [Features](#-features)
+- [Installation](#️-installation)
+- [Quick Start](#-quick-start)
+- [Architecture](#️-architecture)
+- [Components](#-components)
+- [Callback System](#-callback-system)
+- [Commands](#-commands)
+- [Events](#-events)
+- [Custom Interactions](#-custom-interactions)
+- [Configuration](#️-configuration)
+- [Examples](#-examples)
+- [API Reference](#-api-reference)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
+- [Support](#-support)
 
 ## 🛠️ Installation
 
