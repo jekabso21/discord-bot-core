@@ -29,8 +29,6 @@ A powerful, modular Discord bot framework built with TypeScript and Discord.js v
 - [API Reference](#-api-reference)
 - [Contributing](#-contributing)
 - [License](#-license)
-- [Acknowledgments](#-acknowledgments)
-- [Support](#-support)
 
 ## 🛠️ Installation
 
@@ -920,23 +918,6 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
-
-- [Discord.js](https://discord.js.org/) - The Discord API library
-- [TypeScript](https://www.typescriptlang.org/) - Type safety and developer experience
-- [Node.js](https://nodejs.org/) - Runtime environment
-
-## 📞 Support
-
-- 📖 [Documentation](https://github.com/yourusername/discord-bot-core/wiki)
-- 🐛 [Issue Tracker](https://github.com/yourusername/discord-bot-core/issues)
-- 💬 [Discussions](https://github.com/yourusername/discord-bot-core/discussions)
-- 📧 [Email Support](mailto:support@yourdomain.com)
-
-## 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=yourusername/discord-bot-core&type=Date)](https://star-history.com/#yourusername/discord-bot-core&Date)
-
 ---
 
-Made with ❤️ by the Discord Bot Core team
+Made with ❤️ by retro21
